@@ -9,7 +9,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-const refreshInterval = 25 * time.Millisecond
+const refreshInterval = 15 * time.Millisecond
 
 var (
 	view *tview.Box
@@ -44,7 +44,7 @@ func bounce(screen tcell.Screen, x int, y int, width int, height int) (int, int,
 	tview.Print(screen, msg, x, height/2, width, tview.AlignCenter, tcell.ColorLime)
 
 	// Draw the ball.
-	tview.Print(screen, "o", ballX, ballY, 1, tview.AlignCenter, tcell.ColorWhite)
+	tview.Print(screen, "[::b]o", ballX, ballY, 1, tview.AlignCenter, tcell.ColorRed)
 
 	// Move the ball.
 	ballX += dx
