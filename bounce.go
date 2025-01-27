@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -9,6 +10,7 @@ import (
 )
 
 const maxTailLength = 10
+const maxBalls = 10
 
 // Represents a ball, its position, and its direction.
 type Ball struct {
@@ -25,20 +27,14 @@ type BallWithTail struct {
 	tailLength int
 }
 
-var ball BallWithTail = BallWithTail{
-	head: Ball{x: 1,
-		y: 1},
-	directionX: 1,
-	directionY: 1,
-	color:      tcell.ColorRed,
-	tail:       [maxTailLength]Ball{},
-	tailLength: 0,
-}
-
 var (
-	view      *tview.Box
-	app       *tview.Application
-	ballSpeed = 15
+	view           *tview.Box
+	app            *tview.Application
+	ballSpeed      = 15
+	ballCharacters = []string{"〇", "◯", "○", "○", "◌", "◌", "◌", "◌", "◌", "◌", "⋅"}
+	ballColors     = []tcell.Color{tcell.ColorRed, tcell.ColorGreen, tcell.ColorBlue, tcell.ColorYellow, tcell.ColorOrange, tcell.ColorPurple, tcell.ColorAqua, tcell.ColorOlive, tcell.ColorSilver, tcell.ColorMaroon}
+	balls          = [maxBalls]BallWithTail{}
+	ballCount      = 0
 )
 
 func main() {
@@ -56,6 +52,27 @@ func main() {
 	}
 }
 
+func addBall() {
+	if ballCount < maxBalls {
+		_, _, width, height := view.GetRect()
+		balls[ballCount] = BallWithTail{
+			head:       Ball{x: rand.Intn(width), y: rand.Intn(height)},
+			directionX: rand.Intn(2)*2 - 1,
+			directionY: rand.Intn(2)*2 - 1,
+			color:      ballColors[ballCount],
+			tail:       [maxTailLength]Ball{},
+			tailLength: 0,
+		}
+		ballCount++
+	}
+}
+
+func removeBall() {
+	if ballCount > 1 {
+		ballCount--
+	}
+}
+
 func handleKeyboard(event *tcell.EventKey) *tcell.EventKey {
 	switch event.Key() {
 	case tcell.KeyEscape:
@@ -64,20 +81,33 @@ func handleKeyboard(event *tcell.EventKey) *tcell.EventKey {
 		ballSpeed = max(ballSpeed-1, 1)
 	case tcell.KeyDown:
 		ballSpeed = min(ballSpeed+1, 100)
+	case tcell.KeyRune:
+		if event.Rune() == '+' {
+			addBall()
+		} else if event.Rune() == '-' {
+			removeBall()
+		}
 	}
 	return event
 }
 
 func bounce(screen tcell.Screen, x int, y int, width int, height int) (int, int, int, int) {
-	keepBallInBounds(width, height)
+	if ballCount == 0 {
+		addBall()
+	}
+
+	for ball := 0; ball < ballCount; ball++ {
+		keepBallInBounds(&balls[ball], width, height)
+		drawBall(screen, &balls[ball])
+		moveBall(&balls[ball], width, height)
+	}
+
 	showStatusAndInstructions(width, height, screen, x)
-	drawBall(screen)
-	moveBall(width, height)
 
 	return 0, 0, 0, 0
 }
 
-func keepBallInBounds(width int, height int) {
+func keepBallInBounds(ball *BallWithTail, width int, height int) {
 	// Keep the ball in bounds.
 	ball.head.x = max(min(ball.head.x, width-2), 1)
 	ball.head.y = max(min(ball.head.y, height-2), 1)
@@ -89,11 +119,11 @@ func keepBallInBounds(width int, height int) {
 	}
 }
 
-func drawBall(screen tcell.Screen) {
-	tview.Print(screen, "[::b]O", ball.head.x, ball.head.y, 1, tview.AlignCenter, ball.color)
+func drawBall(screen tcell.Screen, ball *BallWithTail) {
+	tview.Print(screen, ballCharacters[0], ball.head.x, ball.head.y, 1, tview.AlignCenter, ball.color)
 
 	for i := 0; i < ball.tailLength; i++ {
-		tview.Print(screen, "*", ball.tail[i].x, ball.tail[i].y, 1, tview.AlignCenter, dimColor(ball.color, int32((maxTailLength-i)*10)))
+		tview.Print(screen, ballCharacters[i+1], ball.tail[i].x, ball.tail[i].y, 1, tview.AlignCenter, dimColor(ball.color, int32((maxTailLength-i)*10)))
 	}
 }
 
@@ -102,7 +132,7 @@ func dimColor(color tcell.Color, percentage int32) tcell.Color {
 	return tcell.NewRGBColor(r*percentage/100, g*percentage/100, b*percentage/100)
 }
 
-func updateTail() {
+func updateTail(ball *BallWithTail) {
 	ball.tailLength = min(ball.tailLength+1, maxTailLength)
 
 	for i := ball.tailLength - 1; i > 0; i-- {
@@ -111,8 +141,8 @@ func updateTail() {
 	ball.tail[0] = ball.head
 }
 
-func moveBall(width int, height int) {
-	updateTail()
+func moveBall(ball *BallWithTail, width int, height int) {
+	updateTail(ball)
 	ball.head.x += ball.directionX
 	ball.head.y += ball.directionY
 
@@ -126,9 +156,9 @@ func moveBall(width int, height int) {
 }
 
 func showStatusAndInstructions(width int, height int, screen tcell.Screen, x int) {
-	msg := fmt.Sprintf("x=%d, y=%d - [width=%d, height=%d, Speed=%d]", ball.head.x, ball.head.y, width, height, ballSpeed)
+	msg := fmt.Sprintf("[width=%d, height=%d, Speed=%d, Balls=%d]", width, height, ballSpeed, ballCount)
 	tview.Print(screen, msg, x, height/2, width, tview.AlignCenter, tcell.ColorLime)
-	tview.Print(screen, "Press ESC to exit, Cursor UP/Down to change speed", x, height/2+1, width, tview.AlignCenter, tcell.ColorDarkGoldenrod)
+	tview.Print(screen, "[ESC[] to exit, [UP[]/[Down[] to change speed, [+[]/[-[] Add/Remove Ball", x, height/2+1, width, tview.AlignCenter, tcell.ColorDarkGoldenrod)
 }
 
 func refresh() {
