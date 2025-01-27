@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -62,9 +61,9 @@ func handleKeyboard(event *tcell.EventKey) *tcell.EventKey {
 	case tcell.KeyEscape:
 		app.Stop()
 	case tcell.KeyUp:
-		ballSpeed = int(math.Max(float64(ballSpeed-1), 1))
+		ballSpeed = max(ballSpeed-1, 1)
 	case tcell.KeyDown:
-		ballSpeed = int(math.Min(float64(ballSpeed+1), 100))
+		ballSpeed = min(ballSpeed+1, 100)
 	}
 	return event
 }
@@ -80,13 +79,13 @@ func bounce(screen tcell.Screen, x int, y int, width int, height int) (int, int,
 
 func keepBallInBounds(width int, height int) {
 	// Keep the ball in bounds.
-	ball.head.x = int(math.Max(float64(math.Min(float64(ball.head.x), float64(width-2))), 1))
-	ball.head.y = int(math.Max(float64(math.Min(float64(ball.head.y), float64(height-2))), 1))
+	ball.head.x = max(min(ball.head.x, width-2), 1)
+	ball.head.y = max(min(ball.head.y, height-2), 1)
 
 	// Keep the tail in bounds.
 	for _, tail := range ball.tail {
-		tail.x = int(math.Max(float64(math.Min(float64(tail.x), float64(width-2))), 1))
-		tail.y = int(math.Max(float64(math.Min(float64(tail.y), float64(height-2))), 1))
+		tail.x = max(min(tail.x, width-2), 1)
+		tail.y = max(min(tail.y, height-2), 1)
 	}
 }
 
@@ -99,7 +98,8 @@ func drawBall(screen tcell.Screen) {
 }
 
 func updateTail() {
-	ball.tailLength = int(math.Min(float64(ball.tailLength+1), maxTailLength))
+	ball.tailLength = min(ball.tailLength+1, maxTailLength)
+
 	for i := ball.tailLength - 1; i > 0; i-- {
 		ball.tail[i] = ball.tail[i-1]
 	}
