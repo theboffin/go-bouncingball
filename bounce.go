@@ -93,8 +93,13 @@ func drawBall(screen tcell.Screen) {
 	tview.Print(screen, "[::b]O", ball.head.x, ball.head.y, 1, tview.AlignCenter, ball.color)
 
 	for i := 0; i < ball.tailLength; i++ {
-		tview.Print(screen, "*", ball.tail[i].x, ball.tail[i].y, 1, tview.AlignCenter, ball.color)
+		tview.Print(screen, "*", ball.tail[i].x, ball.tail[i].y, 1, tview.AlignCenter, dimColor(ball.color, int32((maxTailLength-i)*10)))
 	}
+}
+
+func dimColor(color tcell.Color, percentage int32) tcell.Color {
+	r, g, b := color.RGB()
+	return tcell.NewRGBColor(r*percentage/100, g*percentage/100, b*percentage/100)
 }
 
 func updateTail() {
