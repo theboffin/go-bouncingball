@@ -10,7 +10,7 @@ import (
 )
 
 const maxTailLength = 10
-const maxBalls = 10
+const maxBalls = 500
 
 // Represents a ball, its position, and its direction.
 type Ball struct {
@@ -59,7 +59,7 @@ func addBall() {
 			head:       Ball{x: rand.Intn(width), y: rand.Intn(height)},
 			directionX: rand.Intn(2)*2 - 1,
 			directionY: rand.Intn(2)*2 - 1,
-			color:      ballColors[ballCount],
+			color:      ballColors[rand.Intn(10)],
 			tail:       [maxTailLength]Ball{},
 			tailLength: 0,
 		}

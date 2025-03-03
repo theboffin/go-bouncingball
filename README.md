@@ -13,7 +13,7 @@ The bouncing of the ball should auto-correct itself for any change in terminal w
 
 Controls are shown to:
 * [ESC] exit the demo application
-* [+] to add a ball (maximum of 10)
+* [+] to add a ball (maximum of 500)
 * [-] to remove a ball (down to 1)
 * [CursorUp] Increase the speed of all balls
 * [CursorDown] Decrease the speed of all balls
